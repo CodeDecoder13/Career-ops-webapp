@@ -5,6 +5,29 @@ Status: Approved — implementation underway
 
 **Repo note:** implementation lives in this repo (`CodeDecoder13/Career-ops-webapp`), Laravel app under `my-app/`.
 
+## Build Status (as of 2026-08-05)
+
+**Done:**
+- `applications` + `stats_snapshots` tables, Eloquent models (`num`/`company`/`role`/`score`/`status`/`date`/`report_link`/`pdf_link`/`notes`) — table named `applications`, not `jobs`, to avoid colliding with Laravel's own queue-jobs table
+- `POST /api/sync`: `sync.token` bearer-auth middleware, `SyncRequest` validation, upserts applications by `num`, inserts a `stats_snapshots` row, diffs for genuinely-new rows
+- New-job email: queued `NewJobsMail`, one email per sync batch listing company + role, sent to the single seeded user
+- `GET /` (auth-gated): `DashboardController` → `Dashboard.vue` — 4 stat cards (applications/funnel/pipeline health/scan activity) bound to career-ops's real `stats.mjs --json` shape, applications table with status badges, empty state, light/dark verified
+- Auth: Breeze single seeded user (`DatabaseSeeder` reads `SITE_EMAIL`/`SITE_PASSWORD`), self-registration route/page removed
+- Entrance animation (stagger fade+slide, `motion-safe:`-gated, no new dependency)
+- 31 passing Pest/PHPUnit feature tests; manually verified end-to-end in-browser (login → populated dashboard) via a local `php artisan serve` + synthetic `POST /api/sync` call
+- Bug caught and fixed during manual verification: `score` is a float (career-ops emits `3.5/5`), originally migrated as an integer — corrected column type, model cast, and validation rule
+
+**Not yet built:**
+- **`sync-watcher.mjs`** — the local file-watcher script that actually bridges career-ops's `data/` files to `POST /api/sync`. Nothing exists for this yet; right now the endpoint has only been exercised manually via curl. This is the missing link end-to-end.
+- **Weekly scan automation** — no Windows Task Scheduler task has been created.
+- **Railway deployment** — nothing deployed. Local dev currently runs against Postgres (per your instruction on 2026-08-05, in place of the Docker MySQL originally planned); which engine Railway runs is still an open question, see Risks below.
+- **n8n integration** — parked at your request on 2026-08-05; spec section below is retained for later, nothing built.
+
+## Deviations from original spec
+
+- **Table name:** `jobs` → `applications` (Laravel reserves `jobs` for its queue system).
+- **Local DB engine:** Postgres, not the originally-planned MySQL-via-Docker — your explicit choice mid-build. Doesn't affect application code (no MySQL-specific SQL used), but Railway's production DB engine hasn't been decided yet; default to Postgres for consistency unless you'd rather match the original MySQL plan.
+
 ## Purpose
 
 A read-only web dashboard that mirrors the local [career-ops](../../../../career-ops) job-search pipeline (tracker table + pipeline stats) so it can be viewed from anywhere, not just the terminal/local files. career-ops remains the sole source of truth; the webapp never writes back to it.
@@ -48,7 +71,7 @@ Two independently deployable pieces:
 
 - **Auth:** Laravel Breeze, Inertia+Vue preset. One seeded user (email + password = `SITE_PASSWORD`), no self-registration. All dashboard routes sit behind the `auth` middleware.
 - **`POST /api/sync`:** outside the `auth` middleware; guarded instead by a custom `sync.token` middleware that checks the bearer token against `config('services.sync.secret')`. Payload validated via a `FormRequest` (rejects malformed shape with 422).
-- **`GET /` (behind `auth`):** `DashboardController` loads the current `Job` rows and the latest `StatsSnapshot` from the DB and renders `Inertia::render('Dashboard', [...])`.
+- **`GET /` (behind `auth`):** `DashboardController` loads the current `Application` rows and the latest `StatsSnapshot` from the DB and renders `Inertia::render('Dashboard', [...])`.
 - **`Dashboard.vue`:** stat cards (funnel counts, avg score, pipeline health, scan totals) + tracker table (company, role, score, status, date, report link).
 - **New-job email:** on `POST /api/sync`, diff incoming `jobs` payload against existing `num`s. If any are new, queue one `Mail` (Laravel queued mailable) listing company + role per new job — one email per sync batch, not per job. Sent to the single seeded user's email.
 
@@ -57,9 +80,9 @@ Two independently deployable pieces:
 - Windows Task Scheduler task, weekly (Monday), runs `node scan.mjs` inside the career-ops directory — same as running it by hand, no new career-ops code, no data-contract changes.
 - The existing sync-watcher picks up the resulting file changes normally; no new watcher logic needed for this piece.
 
-### Data model (Eloquent / MySQL)
+### Data model (Eloquent)
 
-- `jobs`: `num` (unique), `company`, `role`, `score`, `status`, `date`, `report_link`, `pdf_link`, `notes`, timestamps. Sync upserts by `num`.
+- `applications`: `num` (unique), `company`, `role`, `score` (decimal, e.g. `3.5`), `status`, `date`, `report_link`, `pdf_link`, `notes`, timestamps. Sync upserts by `num`.
 - `stats_snapshots`: `payload` (json, raw `stats.mjs --json` output), `synced_at`. Sync inserts a new row each sync; dashboard reads the latest.
 
 No other tables, no other write path. This keeps the webapp a pure mirror — all pipeline logic (scoring, funnel calculation, dedup) stays in career-ops.
