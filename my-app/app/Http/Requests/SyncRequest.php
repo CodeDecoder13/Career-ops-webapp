@@ -26,7 +26,7 @@ final class SyncRequest extends FormRequest
             'jobs.*.num' => ['required', 'integer'],
             'jobs.*.company' => ['required', 'string'],
             'jobs.*.role' => ['required', 'string'],
-            'jobs.*.score' => ['nullable', 'integer'],
+            'jobs.*.score' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'jobs.*.status' => ['nullable', 'string'],
             'jobs.*.date' => ['nullable', 'date'],
             'jobs.*.report_link' => ['nullable', 'string'],

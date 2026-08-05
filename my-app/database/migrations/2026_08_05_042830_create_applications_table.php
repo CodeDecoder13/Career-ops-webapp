@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedInteger('num')->unique();
             $table->string('company');
             $table->string('role');
-            $table->unsignedTinyInteger('score')->nullable();
+            $table->decimal('score', 3, 1)->nullable();
             $table->string('status')->nullable();
             $table->date('date')->nullable();
             $table->string('report_link')->nullable();

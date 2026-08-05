@@ -23,7 +23,7 @@ final class Application extends Model
 
     protected $casts = [
         'num' => 'integer',
-        'score' => 'integer',
+        'score' => 'float',
         'date' => 'date',
     ];
 

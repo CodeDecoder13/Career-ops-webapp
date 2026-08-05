@@ -22,7 +22,7 @@ class SyncTest extends TestCase
                     'num' => 1,
                     'company' => 'Acme Corp',
                     'role' => 'Backend Engineer',
-                    'score' => 85,
+                    'score' => 3.5,
                     'status' => 'applied',
                     'date' => '2026-08-01',
                     'report_link' => '/reports/1.md',
