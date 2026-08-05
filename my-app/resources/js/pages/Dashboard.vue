@@ -60,6 +60,10 @@ const funnelStages = computed(() => [
 ]);
 
 const hasStats = computed(() => Boolean(props.stats && Object.keys(props.stats).length > 0));
+
+function staggerDelay(index: number, stepMs: number, maxSteps: number): string {
+    return `${Math.min(index, maxSteps) * stepMs}ms`;
+}
 </script>
 
 <template>
@@ -68,7 +72,7 @@ const hasStats = computed(() => Boolean(props.stats && Object.keys(props.stats).
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 p-4">
             <div v-if="hasStats" class="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card class="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 fill-mode-both duration-300" :style="{ animationDelay: staggerDelay(0, 60, 3) }">
                     <CardHeader class="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium text-muted-foreground">Applications</CardTitle>
                         <FileText class="size-4 text-muted-foreground" aria-hidden="true" />
@@ -79,7 +83,7 @@ const hasStats = computed(() => Boolean(props.stats && Object.keys(props.stats).
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card class="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 fill-mode-both duration-300" :style="{ animationDelay: staggerDelay(1, 60, 3) }">
                     <CardHeader class="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium text-muted-foreground">Funnel</CardTitle>
                         <Target class="size-4 text-muted-foreground" aria-hidden="true" />
@@ -95,7 +99,7 @@ const hasStats = computed(() => Boolean(props.stats && Object.keys(props.stats).
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card class="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 fill-mode-both duration-300" :style="{ animationDelay: staggerDelay(2, 60, 3) }">
                     <CardHeader class="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium text-muted-foreground">Pipeline health</CardTitle>
                         <Activity class="size-4 text-muted-foreground" aria-hidden="true" />
@@ -109,7 +113,7 @@ const hasStats = computed(() => Boolean(props.stats && Object.keys(props.stats).
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card class="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 fill-mode-both duration-300" :style="{ animationDelay: staggerDelay(3, 60, 3) }">
                     <CardHeader class="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium text-muted-foreground">Scan activity</CardTitle>
                         <Radar class="size-4 text-muted-foreground" aria-hidden="true" />
@@ -124,7 +128,7 @@ const hasStats = computed(() => Boolean(props.stats && Object.keys(props.stats).
                 </Card>
             </div>
 
-            <Card>
+            <Card class="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 fill-mode-both duration-300" style="animation-delay: 180ms">
                 <CardHeader>
                     <CardTitle>Applications</CardTitle>
                     <CardDescription>Mirrors your local career-ops tracker. Read-only — updates happen locally.</CardDescription>
@@ -146,7 +150,12 @@ const hasStats = computed(() => Boolean(props.stats && Object.keys(props.stats).
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow v-for="application in applications" :key="application.num">
+                            <TableRow
+                                v-for="(application, index) in applications"
+                                :key="application.num"
+                                class="motion-safe:animate-in motion-safe:fade-in fill-mode-both duration-200"
+                                :style="{ animationDelay: staggerDelay(index, 30, 10) }"
+                            >
                                 <TableCell class="font-medium">{{ application.company }}</TableCell>
                                 <TableCell>{{ application.role }}</TableCell>
                                 <TableCell class="tabular-nums">{{ formatScore(application.score) }}</TableCell>
